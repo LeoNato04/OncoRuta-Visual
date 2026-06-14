@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OncoRuta Visual — Portal de Paciente</title>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Public Sans',sans-serif;background:#f5f5f9;color:#566a7f;min-height:100vh}
+
+/* ── TOP NAV ── */
+.topnav{background:rgba(13,78,142,.96);color:#fff;padding:0 20px;display:flex;align-items:center;justify-content:space-between;height:52px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.18)}
+.topnav-left{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600}
+.topnav-left i{font-size:20px}
+.topnav-right{display:flex;align-items:center;gap:8px}
+.nav-pill{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:500;color:#fff;cursor:pointer;display:flex;align-items:center;gap:5px;transition:background .15s}
+.nav-pill:hover{background:rgba(255,255,255,.22)}
+.nav-pill i{font-size:14px}
+.wa-status{background:#25d366;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600;color:#fff;display:flex;align-items:center;gap:5px;cursor:pointer}
+.wa-status i{font-size:14px}
+
+/* ── TAB BAR ── */
+.tabbar{background:#fff;border-bottom:1px solid #dbdade;display:flex;max-width:860px;margin:0 auto;overflow-x:auto}
+.tab{flex:1;min-width:80px;padding:12px 8px;font-size:12px;font-weight:600;color:#a8aaae;border:none;background:transparent;cursor:pointer;border-bottom:3px solid transparent;display:flex;flex-direction:column;align-items:center;gap:4px;transition:color .15s,border-color .15s;white-space:nowrap}
+.tab i{font-size:20px}
+.tab.active{color:rgba(13,78,142,.93);border-bottom-color:rgba(13,78,142,.93)}
+.tab .badge-dot{background:#dc2626;color:#fff;border-radius:10px;font-size:9px;font-weight:700;padding:1px 5px;margin-left:3px}
+
+/* ── MAIN LAYOUT ── */
+.main{max-width:860px;margin:0 auto;padding:18px 16px 40px}
+.panel{display:none}.panel.active{display:block}
+
+/* ── CARDS ── */
+.card{background:#fff;border-radius:12px;border:1px solid #dbdade;margin-bottom:14px;overflow:hidden}
+.card-header{padding:14px 18px 0;display:flex;align-items:center;justify-content:space-between}
+.card-body{padding:16px 18px}
+.section-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#a8aaae;margin-bottom:12px}
+
+/* ── BADGE DISPLAY ── */
+.badge-row{display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap}
+.lanyard-wrap{flex-shrink:0;display:flex;flex-direction:column;align-items:center}
+.lanyard{width:8px;height:28px;background:#00bcd4;border-radius:4px 4px 0 0}
+.lanyard-clip{width:14px;height:6px;background:#b0b8c4;border-radius:3px}
+.badge-card{width:140px;border-radius:14px;border:3px solid #e0e0e0;background:#fff;padding:5px;box-shadow:0 4px 18px rgba(0,0,0,.13);cursor:pointer;transition:transform .18s,box-shadow .18s}
+.badge-card:hover{transform:scale(1.04);box-shadow:0 8px 28px rgba(0,0,0,.18)}
+.badge-face{border-radius:10px;height:178px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;transition:background .4s}
+.badge-icon-circle{width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center}
+.badge-icon-circle i{font-size:26px;color:#fff}
+.badge-name{font-size:11px;font-weight:700;color:#fff;text-align:center;padding:0 6px;letter-spacing:.4px}
+.badge-sub{font-size:9px;color:rgba(255,255,255,.78);font-style:italic;text-align:center;padding:0 4px}
+.badge-foot{text-align:center;padding:5px 3px 2px;font-size:8px;font-weight:700;color:#0d4e8e;letter-spacing:.4px}
+.badge-info-col{flex:1;min-width:200px}
+.patient-name{font-size:16px;font-weight:700;color:#32383e;margin-bottom:2px}
+.patient-meta{font-size:11px;color:#a8aaae;margin-bottom:14px}
+.level-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:30px;font-size:12px;font-weight:600;color:#fff;margin-bottom:12px;transition:background .4s}
+.level-pill i{font-size:14px}
+.level-msg{font-size:13px;color:#566a7f;line-height:1.6;background:#f8f8ff;border-radius:8px;padding:10px 14px;border-left:3px solid #e0e0e0;margin-bottom:12px;transition:border-color .4s}
+.next-lbl{font-size:11px;font-weight:600;color:#32383e;margin-bottom:5px}
+.next-box{background:#f0f7ff;border:1px solid #c2d9f0;border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:8px;font-size:13px;color:#0d4e8e;font-weight:500}
+.next-box i{font-size:16px;color:#0d4e8e;flex-shrink:0}
+
+/* ── ROUTE DOTS ── */
+.route-section{padding:14px 18px 16px}
+.conn-row{display:flex;align-items:center;padding:0 22px 4px;gap:0}
+.conn-seg{flex:1;height:2px;background:#e0e0e0;transition:background .4s}
+.dots-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.dot-btn{appearance:none;background:transparent;border:none;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;transition:transform .15s;padding:0}
+.dot-btn:hover{transform:translateY(-3px)}
+.dot-circle{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid transparent;transition:all .2s}
+.dot-circle i{font-size:17px;color:#fff}
+.dot-circle.done{opacity:1}
+.dot-circle.current{border-color:#fff;box-shadow:0 0 0 3px var(--lc,#888)}
+.dot-circle.locked{opacity:.25;filter:grayscale(.5)}
+.dot-lbl{font-size:9px;font-weight:600;color:#566a7f;text-align:center;line-height:1.3}
+.dot-lbl.active-lbl{color:#32383e;font-weight:700}
+
+/* ── CONTROLS ── */
+.controls{padding:14px 18px 16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-top:1px solid #f0f0f4}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:6px;font-size:13px;font-weight:600;border:none;cursor:pointer;font-family:inherit;transition:opacity .15s,transform .12s}
+.btn:hover{opacity:.88;transform:translateY(-1px)}
+.btn-primary{background:rgba(13,78,142,.93);color:#fff}
+.btn-outline{background:transparent;color:rgba(13,78,142,.93);border:1.5px solid rgba(13,78,142,.4)}
+.btn-green{background:#16a34a;color:#fff}
+.btn-wa{background:#25d366;color:#fff}
+.stage-note{font-size:11px;color:#a8aaae;margin-left:4px}
+
+/* ── ALERTS PANEL ── */
+.alert-item{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid #f0f0f4}
+.alert-item:last-child{border-bottom:none}
+.alert-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.alert-title{font-size:13px;font-weight:600;color:#32383e;margin-bottom:2px}
+.alert-sub{font-size:12px;color:#566a7f;line-height:1.5}
+.alert-time{font-size:11px;color:#a8aaae;margin-top:3px}
+.alert-tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600}
+.tag-red{background:#fee2e2;color:#dc2626}
+.tag-amber{background:#fef3c7;color:#d97706}
+.tag-green{background:#dcfce7;color:#16a34a}
+.tag-blue{background:#dbeafe;color:#1d4ed8}
+
+/* ── STEPS PANEL ── */
+.step-item{display:flex;gap:14px;padding:10px 0;border-bottom:1px solid #f0f0f4}
+.step-item:last-child{border-bottom:none}
+.step-num{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.step-body{flex:1}
+.step-name{font-size:13px;font-weight:600;color:#32383e;margin-bottom:2px}
+.step-detail{font-size:12px;color:#566a7f;line-height:1.5}
+.step-date{font-size:11px;color:#a8aaae;margin-top:3px}
+.step-check{width:22px;height:22px;border-radius:50%;border:2px solid #e0e0e0;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:3px}
+.step-check.done-check{background:#16a34a;border-color:#16a34a}
+.step-check.done-check i{font-size:12px;color:#fff}
+.step-check.pending-check{border-color:#f97316}
+.step-check.today-check{background:#2563eb;border-color:#2563eb}
+.step-check.today-check i{font-size:12px;color:#fff}
+
+/* ── REMINDER ITEMS ── */
+.reminder-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f0f0f4}
+.reminder-item:last-child{border-bottom:none}
+.reminder-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.reminder-icon i{font-size:18px}
+.reminder-body{flex:1}
+.reminder-title{font-size:13px;font-weight:600;color:#32383e;margin-bottom:1px}
+.reminder-sub{font-size:12px;color:#566a7f}
+.reminder-toggle{flex-shrink:0}
+.toggle{position:relative;width:40px;height:22px;cursor:pointer}
+.toggle input{opacity:0;width:0;height:0;position:absolute}
+.toggle-track{position:absolute;inset:0;background:#e0e0e0;border-radius:11px;transition:background .2s}
+.toggle input:checked+.toggle-track{background:#16a34a}
+.toggle-thumb{position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.2);transition:transform .2s}
+.toggle input:checked~.toggle-thumb{transform:translateX(18px)}
+
+/* ── WHATSAPP MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;display:none;align-items:center;justify-content:center;padding:16px}
+.modal-overlay.show{display:flex}
+.modal-card{background:#fff;border-radius:16px;padding:28px 24px;max-width:380px;width:100%;animation:popIn .3s ease}
+@keyframes popIn{from{transform:scale(.75);opacity:0}70%{transform:scale(1.04)}to{transform:scale(1);opacity:1}}
+.modal-wa-header{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.wa-circle{width:52px;height:52px;border-radius:50%;background:#25d366;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.wa-circle i{font-size:28px;color:#fff}
+.modal-wa-header h3{font-size:17px;font-weight:700;color:#32383e;margin-bottom:2px}
+.modal-wa-header p{font-size:12px;color:#566a7f}
+.phone-row{display:flex;gap:8px;margin-bottom:14px}
+.prefix-box{background:#f0f7ff;border:1px solid #c2d9f0;border-radius:8px;padding:10px 12px;font-size:14px;font-weight:600;color:#0d4e8e;white-space:nowrap}
+.phone-input{flex:1;border:1px solid #dbdade;border-radius:8px;padding:10px 14px;font-size:14px;font-family:inherit;color:#32383e;outline:none;transition:border-color .15s}
+.phone-input:focus{border-color:rgba(13,78,142,.5);box-shadow:0 0 0 3px rgba(13,78,142,.08)}
+.phone-note{font-size:11px;color:#a8aaae;margin-bottom:16px;line-height:1.5}
+.modal-wa-steps{background:#f0fdf4;border-radius:10px;padding:12px 14px;margin-bottom:18px}
+.modal-wa-steps p{font-size:12px;color:#15803d;margin-bottom:4px;display:flex;align-items:center;gap:6px}
+.modal-wa-steps p:last-child{margin-bottom:0}
+.modal-wa-steps i{font-size:14px;flex-shrink:0}
+.modal-btns{display:flex;gap:8px}
+.modal-btns button{flex:1;padding:10px;border-radius:8px;font-size:13px;font-weight:600;border:none;cursor:pointer;font-family:inherit}
+.btn-cancel-modal{background:#f5f5f9;color:#566a7f}
+.btn-confirm-wa{background:#25d366;color:#fff}
+
+/* ── SUCCESS TOAST ── */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#32383e;color:#fff;border-radius:10px;padding:12px 20px;font-size:13px;font-weight:500;z-index:999;transition:transform .3s;display:flex;align-items:center;gap:8px;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.25)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast i{font-size:18px;color:#4ade80}
+
+/* ── CELEBRATION ── */
+.celebration{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:600;display:none;align-items:center;justify-content:center;padding:16px}
+.celebration.show{display:flex}
+.cel-card{background:#fff;border-radius:16px;padding:30px 28px;text-align:center;max-width:320px;width:100%;animation:popIn .35s ease}
+.cel-badge{width:76px;height:76px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px}
+.cel-badge i{font-size:36px;color:#fff}
+.cel-title{font-size:19px;font-weight:700;color:#32383e;margin-bottom:7px}
+.cel-sub{font-size:13px;color:#566a7f;line-height:1.6;margin-bottom:18px}
+.cel-close{background:rgba(13,78,142,.93);color:#fff;border:none;border-radius:8px;padding:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;width:100%}
+
+/* ── MISC ── */
+.divider{border:none;border-top:1px solid #dbdade;margin:0}
+.empty-state{text-align:center;padding:32px 20px;color:#a8aaae}
+.empty-state i{font-size:40px;margin-bottom:8px;display:block}
+.empty-state p{font-size:13px}
+@media(max-width:540px){.badge-row{flex-direction:column;align-items:center}.dots-grid{grid-template-columns:repeat(3,1fr)}.topnav-left span{font-size:12px}.tab{font-size:10px;padding:10px 4px}}
+
+/* ── LANGUAGE SWITCHER (añadido) ── */
+.lang-switcher{position:relative;flex-shrink:0}
+.lang-toggle{width:32px;height:32px;border:1px solid rgba(255,255,255,.35);border-radius:50%;background:rgba(255,255,255,.12);color:#fff;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:17px;transition:background .15s,transform .12s;padding:0}
+.lang-toggle:hover{background:rgba(255,255,255,.24);transform:translateY(-1px)}
+.lang-menu{position:absolute;top:calc(100% + 8px);right:0;z-index:300;min-width:168px;padding:6px;border:1px solid #dbdade;border-radius:10px;background:#fff;box-shadow:0 10px 28px rgba(0,0,0,.18)}
+.lang-menu[hidden]{display:none}
+.lang-opt{width:100%;border:none;border-radius:6px;background:transparent;color:#32383e;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;font-family:inherit;font-size:13px;font-weight:600;padding:8px 10px;text-align:left}
+.lang-opt:hover{background:#f0f7ff}
+.lang-opt[aria-checked="true"]::after{content:"✓";color:#0d4e8e;font-weight:700}
+.lang-loading{position:fixed;inset:0;background:rgba(255,255,255,.6);backdrop-filter:blur(2px);z-index:900;display:none;align-items:center;justify-content:center}
+.lang-loading.show{display:flex}
+.lang-spinner{width:44px;height:44px;border:4px solid #e0e0e0;border-top-color:#0d4e8e;border-radius:50%;animation:lspin .7s linear infinite}
+@keyframes lspin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="lang-loading" id="lang-loading"><div class="lang-spinner"></div></div>
+
+<!-- TOP NAV -->
+<nav class="topnav">
+  <div class="topnav-left">
+    <i class='bx bx-plus-medical'></i>
+    <span>OncoRuta Visual · INEN</span>
+  </div>
+  <div class="topnav-right">
+    <div class="nav-pill" onclick="showTab('perfil')"><i class='bx bx-user'></i> María</div>
+    <div class="lang-switcher">
+      <button class="lang-toggle" id="lang-toggle" aria-haspopup="menu" aria-expanded="false" aria-controls="lang-menu" aria-label="Cambiar idioma" type="button"><i class='bx bx-globe'></i></button>
+      <div class="lang-menu" id="lang-menu" role="menu" hidden>
+        <button class="lang-opt" type="button" role="menuitemradio" data-lang="es" aria-checked="true">Español</button>
+        <button class="lang-opt" type="button" role="menuitemradio" data-lang="qu" aria-checked="false">Quechua</button>
+        <button class="lang-opt" type="button" role="menuitemradio" data-lang="ay" aria-checked="false">Aymara</button>
+        <button class="lang-opt" type="button" role="menuitemradio" data-lang="ot" aria-checked="false">Otros</button>
+      </div>
+    </div>
+    <div class="wa-status" id="wa-nav-status" onclick="openWaModal()"><i class='bx bxl-whatsapp'></i> <span id="wa-nav-label">Activar alertas</span></div>
+  </div>
+</nav>
+
+<!-- TAB BAR -->
+<div class="tabbar">
+  <button class="tab active" id="tab-credencial" onclick="showTab('credencial')"><i class='bx bx-id-card'></i>Credencial</button>
+  <button class="tab" id="tab-pasos" onclick="showTab('pasos')"><i class='bx bx-list-check'></i>Pasos</button>
+  <button class="tab" id="tab-alertas" onclick="showTab('alertas')"><i class='bx bx-bell'></i>Alertas<span class="badge-dot" id="alert-badge">3</span></button>
+  <button class="tab" id="tab-recordatorios" onclick="showTab('recordatorios')"><i class='bx bx-calendar-check'></i>Recordatorios</button>
+  <button class="tab" id="tab-perfil" onclick="showTab('perfil')"><i class='bx bx-user-circle'></i>Mi perfil</button>
+</div>
+
+<div class="main">
+
+<!-- ══════════════════════════════════════════
+     PANEL 1: CREDENCIAL
+══════════════════════════════════════════ -->
+<div class="panel active" id="panel-credencial">
+
+  <!-- Badge card -->
+  <div class="card">
+    <div class="card-body">
+      <div class="section-lbl">Tu estado actual</div>
+      <div class="badge-row">
+        <div class="lanyard-wrap">
+          <div class="lanyard"></div>
+          <div class="lanyard-clip"></div>
+          <div class="badge-card" onclick="openCelebration()">
+            <div class="badge-face" id="badge-face">
+              <div class="badge-icon-circle"><i class='bx' id="badge-icon"></i></div>
+              <div class="badge-name" id="badge-name"></div>
+              <div class="badge-sub" id="badge-sub"></div>
+            </div>
+            <div class="badge-foot">INEN · OncoRuta</div>
+          </div>
+        </div>
+        <div class="badge-info-col">
+          <div class="patient-name">María Quispe Huanca</div>
+          <div class="patient-meta">N° Historia: 0695023 · DNI: 81407851</div>
+          <div class="level-pill" id="level-pill"><i class='bx' id="pill-icon"></i><span id="pill-label"></span></div>
+          <div class="level-msg" id="level-msg"></div>
+          <div class="next-lbl">Próxima acción:</div>
+          <div class="next-box"><i class='bx bx-right-arrow-circle'></i><span id="next-text"></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Route dots -->
+  <div class="card" style="overflow:visible">
+    <div class="route-section">
+      <div class="section-lbl">Tu ruta completa</div>
+      <div class="conn-row" id="conn-row"></div>
+      <div class="dots-grid" id="dots-grid"></div>
+    </div>
+    <div class="controls">
+      <button class="btn btn-primary" id="advance-btn" onclick="advance()"><i class='bx bx-chevron-right-circle'></i>Simular siguiente etapa</button>
+      <button class="btn btn-outline" onclick="reset()"><i class='bx bx-reset'></i>Reiniciar</button>
+      <span class="stage-note" id="stage-note"></span>
+    </div>
+  </div>
+
+  <!-- WhatsApp activation -->
+  <div class="card">
+    <div class="card-body" style="display:flex;align-items:center;gap:14px;">
+      <div style="width:44px;height:44px;border-radius:12px;background:#dcfce7;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class='bx bxl-whatsapp' style="font-size:24px;color:#16a34a"></i></div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:600;color:#32383e;margin-bottom:2px">Alertas por WhatsApp</div>
+        <div style="font-size:12px;color:#566a7f" id="wa-card-status">Recibe recordatorios 24h antes de cada cita directamente en tu celular</div>
+      </div>
+      <button class="btn btn-wa" id="wa-card-btn" onclick="openWaModal()" style="flex-shrink:0;white-space:nowrap"><i class='bx bxl-whatsapp'></i><span id="wa-btn-label">Activar</span></button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════
+     PANEL 2: PASOS DE TRATAMIENTO
+══════════════════════════════════════════ -->
+<div class="panel" id="panel-pasos">
+  <div class="card">
+    <div class="card-body">
+      <div class="section-lbl">Pasos de tu tratamiento</div>
+      <div id="steps-list"></div>
+    </div>
+  </div>
+
+  <div class="card" style="border-left:4px solid #0d4e8e;">
+    <div class="card-body">
+      <div style="font-size:12px;font-weight:600;color:#0d4e8e;margin-bottom:4px"><i class='bx bx-info-circle'></i> Nota del equipo médico</div>
+      <div style="font-size:13px;color:#566a7f;line-height:1.6">Dra. Rosa Medina — Oncología<br>"Cada paso está diseñado para tu recuperación. Ante cualquier duda, llama al <strong>01-201-6000</strong> o escríbeme directamente por el portal."</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PANEL 3: ALERTAS
+══════════════════════════════════════════ -->
+<div class="panel" id="panel-alertas">
+
+  <div class="card" style="border-left:4px solid #dc2626">
+    <div class="card-body" style="padding:12px 16px">
+      <div style="font-size:12px;font-weight:700;color:#dc2626;margin-bottom:6px">🔴 Requiere acción inmediata</div>
+      <div class="alert-item">
+        <div class="alert-dot" style="background:#dc2626"></div>
+        <div style="flex:1">
+          <div class="alert-title">Análisis de sangre pendiente</div>
+          <div class="alert-sub">Debes presentar resultados antes de tu biopsia del 18 de junio. Laboratorio abierto Lun–Vie 7am–2pm.</div>
+          <div class="alert-time">Vence en 3 días · <span class="alert-tag tag-red">Urgente</span></div>
+        </div>
+      </div>
+      <div class="alert-item">
+        <div class="alert-dot" style="background:#dc2626"></div>
+        <div style="flex:1">
+          <div class="alert-title">Confirmación de cita sin respuesta</div>
+          <div class="alert-sub">Tu cita de biopsia del 18 jun necesita confirmación. Llama al 01-201-6000 ext. 312 antes del 15 jun.</div>
+          <div class="alert-time">Hoy · <span class="alert-tag tag-red">Urgente</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="border-left:4px solid #d97706">
+    <div class="card-body" style="padding:12px 16px">
+      <div style="font-size:12px;font-weight:700;color:#d97706;margin-bottom:6px">🟡 Información importante</div>
+      <div class="alert-item">
+        <div class="alert-dot" style="background:#d97706"></div>
+        <div style="flex:1">
+          <div class="alert-title">Documentación incompleta</div>
+          <div class="alert-sub">Falta la autorización de tu seguro de salud. Puedes subirla desde el portal o entregarla en Admisión, Ventanilla 2.</div>
+          <div class="alert-time">hace 2 días · <span class="alert-tag tag-amber">Pendiente</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="border-left:4px solid #16a34a">
+    <div class="card-body" style="padding:12px 16px">
+      <div style="font-size:12px;font-weight:700;color:#16a34a;margin-bottom:6px">🟢 Buenas noticias</div>
+      <div class="alert-item">
+        <div class="alert-dot" style="background:#16a34a"></div>
+        <div style="flex:1">
+          <div class="alert-title">Mamografía revisada por el equipo</div>
+          <div class="alert-sub">El Dr. Salinas ha revisado tus imágenes. El informe estará listo el 16 de junio.</div>
+          <div class="alert-time">hace 1 día · <span class="alert-tag tag-green">Completado</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn btn-outline" style="width:100%;justify-content:center;margin-top:4px" onclick="dismissAlerts()"><i class='bx bx-check-double'></i>Marcar todas como leídas</button>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PANEL 4: RECORDATORIOS
+══════════════════════════════════════════ -->
+<div class="panel" id="panel-recordatorios">
+
+  <div class="card" id="wa-reminder-card">
+    <div class="card-body" style="background:#f0fdf4;border-radius:12px;display:flex;gap:12px;align-items:center">
+      <i class='bx bxl-whatsapp' style="font-size:32px;color:#16a34a;flex-shrink:0"></i>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:600;color:#15803d;margin-bottom:2px" id="wa-reminder-status-title">WhatsApp no activado</div>
+        <div style="font-size:12px;color:#15803d" id="wa-reminder-status-sub">Activa alertas para recibir recordatorios 24h antes de cada cita</div>
+      </div>
+      <button class="btn btn-wa" onclick="openWaModal()" id="wa-reminder-btn" style="flex-shrink:0"><span id="wa-reminder-btn-label">Activar</span></button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <div class="section-lbl">Recordatorios activos</div>
+      <div class="reminder-item">
+        <div class="reminder-icon" style="background:#fef3c7"><i class='bx bx-calendar' style="color:#d97706"></i></div>
+        <div class="reminder-body">
+          <div class="reminder-title">Biopsia de núcleo</div>
+          <div class="reminder-sub">18 jun 2024 · 9:00am · Pabellón C, Piso 2</div>
+        </div>
+        <label class="reminder-toggle toggle">
+          <input type="checkbox" checked onchange="toggleReminder(this,'biopsia')">
+          <span class="toggle-track"></span>
+          <span class="toggle-thumb"></span>
+        </label>
+      </div>
+      <div class="reminder-item">
+        <div class="reminder-icon" style="background:#dbeafe"><i class='bx bx-test-tube' style="color:#1d4ed8"></i></div>
+        <div class="reminder-body">
+          <div class="reminder-title">Recoger resultado anatomopatológico</div>
+          <div class="reminder-sub">25 jun 2024 · Ventanilla 4 · Laboratorio</div>
+        </div>
+        <label class="reminder-toggle toggle">
+          <input type="checkbox" checked onchange="toggleReminder(this,'resultado')">
+          <span class="toggle-track"></span>
+          <span class="toggle-thumb"></span>
+        </label>
+      </div>
+      <div class="reminder-item">
+        <div class="reminder-icon" style="background:#ede9fe"><i class='bx bx-group' style="color:#7c3aed"></i></div>
+        <div class="reminder-body">
+          <div class="reminder-title">Junta médica</div>
+          <div class="reminder-sub">2 jul 2024 · 10:30am · Sala de juntas, Piso 3</div>
+        </div>
+        <label class="reminder-toggle toggle">
+          <input type="checkbox" onchange="toggleReminder(this,'junta')">
+          <span class="toggle-track"></span>
+          <span class="toggle-thumb"></span>
+        </label>
+      </div>
+      <div class="reminder-item">
+        <div class="reminder-icon" style="background:#dcfce7"><i class='bx bx-heart-circle' style="color:#16a34a"></i></div>
+        <div class="reminder-body">
+          <div class="reminder-title">Inicio de tratamiento</div>
+          <div class="reminder-sub">Fecha por definir — se actualizará automáticamente</div>
+        </div>
+        <label class="reminder-toggle toggle">
+          <input type="checkbox" onchange="toggleReminder(this,'tratamiento')">
+          <span class="toggle-track"></span>
+          <span class="toggle-thumb"></span>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <div class="section-lbl">Qué te enviará OncoRuta por WhatsApp</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;gap:10px;align-items:flex-start"><i class='bx bx-check-circle' style="color:#16a34a;font-size:18px;flex-shrink:0;margin-top:1px"></i><div style="font-size:13px;color:#566a7f"><strong>24 horas antes</strong> de tu cita: nombre, hora, pabellón y qué debes traer</div></div>
+        <div style="display:flex;gap:10px;align-items:flex-start"><i class='bx bx-check-circle' style="color:#16a34a;font-size:18px;flex-shrink:0;margin-top:1px"></i><div style="font-size:13px;color:#566a7f"><strong>Cuando sube tu nivel</strong>: mensaje de logro y siguiente paso</div></div>
+        <div style="display:flex;gap:10px;align-items:flex-start"><i class='bx bx-check-circle' style="color:#16a34a;font-size:18px;flex-shrink:0;margin-top:1px"></i><div style="font-size:13px;color:#566a7f"><strong>Alertas urgentes</strong>: documentación pendiente o cambio de cita</div></div>
+        <div style="display:flex;gap:10px;align-items:flex-start"><i class='bx bx-x-circle' style="color:#a8aaae;font-size:18px;flex-shrink:0;margin-top:1px"></i><div style="font-size:13px;color:#a8aaae">Nunca se envían datos clínicos por WhatsApp</div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════
+     PANEL 5: MI PERFIL
+══════════════════════════════════════════ -->
+<div class="panel" id="panel-perfil">
+  <div class="card">
+    <div class="card-body" style="display:flex;gap:14px;align-items:center">
+      <div style="width:56px;height:56px;border-radius:50%;background:#EEF2FF;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#4F46E5;flex-shrink:0">MQ</div>
+      <div>
+        <div style="font-size:16px;font-weight:700;color:#32383e">María Quispe Huanca</div>
+        <div style="font-size:12px;color:#a8aaae">N° Historia: 0695023 · 47 años · Lima</div>
+        <div style="font-size:12px;color:#16a34a;font-weight:600;margin-top:3px"><i class='bx bx-check-shield'></i> SIS activo</div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-body">
+      <div class="section-lbl">Médico responsable</div>
+      <div style="display:flex;gap:12px;align-items:center">
+        <div style="width:44px;height:44px;border-radius:50%;background:#EFF6FF;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#1d4ed8;flex-shrink:0">RM</div>
+        <div>
+          <div style="font-size:13px;font-weight:600;color:#32383e">Dra. Rosa Medina</div>
+          <div style="font-size:12px;color:#566a7f">Oncología · INEN</div>
+          <div style="font-size:12px;color:#0d4e8e;margin-top:2px">01-201-6000 ext. 312</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-body">
+      <div class="section-lbl">Contacto de emergencia</div>
+      <div style="font-size:13px;color:#32383e;font-weight:600">Carlos Quispe (hijo)</div>
+      <div style="font-size:12px;color:#566a7f">+51 987 654 321</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-body">
+      <div class="section-lbl">WhatsApp para alertas</div>
+      <div id="profile-wa-info" style="font-size:13px;color:#a8aaae">No configurado</div>
+      <button class="btn btn-wa" style="margin-top:10px;width:100%;justify-content:center" onclick="openWaModal()"><i class='bx bxl-whatsapp'></i><span id="profile-wa-btn-lbl">Configurar número</span></button>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<!-- ══════════════════════════════════════════
+     WHATSAPP MODAL
+══════════════════════════════════════════ -->
+<div class="modal-overlay" id="wa-modal" onclick="closeWaIfOutside(event)">
+  <div class="modal-card" id="wa-modal-card">
+    <!-- Step 1: Enter number -->
+    <div id="wa-step1">
+      <div class="modal-wa-header">
+        <div class="wa-circle"><i class='bx bxl-whatsapp'></i></div>
+        <div>
+          <h3>Activar alertas por WhatsApp</h3>
+          <p>Te avisamos 24h antes de cada cita y cuando cambies de nivel</p>
+        </div>
+      </div>
+      <div class="phone-row">
+        <div class="prefix-box">🇵🇪 +51</div>
+        <input class="phone-input" id="phone-input" type="tel" maxlength="9" placeholder="987 654 321" inputmode="numeric">
+      </div>
+      <div class="phone-note">Solo se usará para enviarte recordatorios de OncoRuta. No compartimos tu número con terceros.</div>
+      <div class="modal-wa-steps">
+        <p><i class='bx bx-check-circle'></i> Recordatorio 24h antes de tu cita</p>
+        <p><i class='bx bx-check-circle'></i> Notificación al subir de nivel</p>
+        <p><i class='bx bx-check-circle'></i> Alertas urgentes del INEN</p>
+      </div>
+      <div class="modal-btns">
+        <button class="modal-btns btn-cancel-modal" onclick="closeWaModal()">Cancelar</button>
+        <button class="modal-btns btn-confirm-wa" onclick="sendCode()"><i class='bx bxl-whatsapp'></i> Enviar código</button>
+      </div>
+    </div>
+    <!-- Step 2: Verify code -->
+    <div id="wa-step2" style="display:none">
+      <div style="text-align:center;margin-bottom:18px">
+        <div class="wa-circle" style="margin:0 auto 12px"><i class='bx bx-message-dots'></i></div>
+        <h3 style="font-size:17px;font-weight:700;color:#32383e;margin-bottom:6px">Verifica tu número</h3>
+        <p style="font-size:13px;color:#566a7f">Enviamos un código de 4 dígitos al<br><strong id="wa-phone-display"></strong></p>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:center;margin-bottom:14px">
+        <input class="phone-input" id="code1" style="width:52px;text-align:center;font-size:20px;font-weight:700;padding:10px 6px" maxlength="1" inputmode="numeric" oninput="focusNext(this,'code2')">
+        <input class="phone-input" id="code2" style="width:52px;text-align:center;font-size:20px;font-weight:700;padding:10px 6px" maxlength="1" inputmode="numeric" oninput="focusNext(this,'code3')">
+        <input class="phone-input" id="code3" style="width:52px;text-align:center;font-size:20px;font-weight:700;padding:10px 6px" maxlength="1" inputmode="numeric" oninput="focusNext(this,'code4')">
+        <input class="phone-input" id="code4" style="width:52px;text-align:center;font-size:20px;font-weight:700;padding:10px 6px" maxlength="1" inputmode="numeric" oninput="checkCode()">
+      </div>
+      <div style="font-size:12px;color:#a8aaae;text-align:center;margin-bottom:16px">Código de demo: <strong>1234</strong></div>
+      <div class="modal-btns">
+        <button class="modal-btns btn-cancel-modal" onclick="goStep1()">← Volver</button>
+        <button class="modal-btns btn-confirm-wa" id="verify-btn" onclick="verifyCode()">Confirmar</button>
+      </div>
+    </div>
+    <!-- Step 3: Success -->
+    <div id="wa-step3" style="display:none;text-align:center">
+      <div style="width:72px;height:72px;border-radius:50%;background:#dcfce7;display:flex;align-items:center;justify-content:center;margin:0 auto 14px"><i class='bx bx-check-circle' style="font-size:40px;color:#16a34a"></i></div>
+      <h3 style="font-size:18px;font-weight:700;color:#32383e;margin-bottom:8px">¡WhatsApp activado!</h3>
+      <p style="font-size:13px;color:#566a7f;line-height:1.6;margin-bottom:6px">Recibirás tus recordatorios en <strong id="wa-confirmed-number"></strong></p>
+      <p style="font-size:12px;color:#a8aaae;margin-bottom:20px">Tu primera alerta llegará 24h antes de tu próxima cita: <strong>17 de junio</strong></p>
+      <button class="cel-close" onclick="closeWaModal()">¡Perfecto, gracias!</button>
+    </div>
+  </div>
+</div>
+
+<!-- CELEBRATION OVERLAY -->
+<div class="celebration" id="celebration" onclick="closeIfOutside(event)">
+  <div class="cel-card">
+    <div class="cel-badge" id="cel-badge"><i class='bx' id="cel-icon"></i></div>
+    <div class="cel-title" id="cel-title"></div>
+    <div class="cel-sub" id="cel-sub"></div>
+    <button class="cel-close" onclick="closeCelebration()">¡Entendido!</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><i class='bx bx-check-circle'></i><span id="toast-msg"></span></div>
+
+<script>
+// ── DATA ──────────────────────────────────────────
+const LEVELS = [
+  { color:"#4F46E5", icon:"bx-star",        name:"Registro",     sub:"Primer paso",       msg:"Te has registrado en OncoRuta. Tu caso está abierto y asignado al equipo de oncología.",          next:"Cita de evaluación inicial — Pabellón A, Piso 1",                        cel_title:"¡Primera estrella desbloqueada!",   cel_sub:"Diste el primer paso. Bienvenida al sistema OncoRuta." },
+  { color:"#F97316", icon:"bx-show",         name:"Estudios",     sub:"Ojo valiente",      msg:"Tus estudios de imagen están en proceso. Mamografía programada, resultados en revisión.",          next:"Llevar orden médica a Imagenología — Pabellón C, Piso 2",                cel_title:"¡Ojo valiente desbloqueado!",       cel_sub:"Completaste tus estudios. Cada examen te acerca más." },
+  { color:"#C026D3", icon:"bx-file",         name:"Diagnóstico",  sub:"Informe en mano",   msg:"Tu diagnóstico ha sido confirmado. El equipo tiene el informe completo.",                          next:"Recoger informe — Ventanilla 4, Laboratorio",                           cel_title:"¡Informe en mano!",                 cel_sub:"Conocer la verdad también es valentía." },
+  { color:"#2563EB", icon:"bx-home-heart",   name:"Plan médico",  sub:"Casa segura",       msg:"Tu plan de tratamiento fue definido por la junta médica. Sabes exactamente qué sigue.",            next:"Junta completada — Coordinar inicio con Dra. Medina",                    cel_title:"¡Casa segura desbloqueada!",        cel_sub:"Tienes un plan. Estás en buenas manos." },
+  { color:"#16A34A", icon:"bx-shield-quarter",name:"Tratamiento", sub:"Guerrera verde",    msg:"Tu tratamiento está en marcha. Cada sesión te acerca más. El equipo del INEN está contigo.",      next:"Próxima sesión: 18 jun 2024 — Pabellón de Oncología, 8:00 am",           cel_title:"¡Guerrera verde desbloqueada!",     cel_sub:"Tu tratamiento ha comenzado. Cada día es una victoria." },
+  { color:"#059669", icon:"bx-crown",        name:"Alta",         sub:"Corona esmeralda",  msg:"¡Ruta completada! Terminaste el proceso. El INEN seguirá contigo en el seguimiento.",             next:"Agendar control post-tratamiento en los próximos 30 días",               cel_title:"¡Corona esmeralda — Ruta completa!",cel_sub:"Lo lograste, María. Esta corona es tuya para siempre." },
+];
+
+const STEPS = [
+  { num:1, color:"#4F46E5", name:"Registro e ingreso al sistema",       detail:"Apertura de historia clínica y asignación al equipo de oncología.",                      date:"Completado el 3 jun 2024",     state:"done"    },
+  { num:2, color:"#F97316", name:"Mamografía bilateral",                 detail:"Estudio de imagen en ambas mamas. Resultado: hallazgo sospechoso en cuadrante sup. izq.", date:"Completado el 10 jun 2024",    state:"done"    },
+  { num:3, color:"#C026D3", name:"Análisis de sangre completo",          detail:"Perfil hematológico requerido antes de biopsia. Presentar en Laboratorio, Piso 1.",       date:"Pendiente — vence 15 jun",     state:"pending" },
+  { num:4, color:"#C026D3", name:"Biopsia de núcleo",                    detail:"Pabellón C, Piso 2. No comer 6 horas antes. Traer DNI y orden médica.",                   date:"18 jun 2024 · 9:00 am",        state:"today"   },
+  { num:5, color:"#2563EB", name:"Resultado anatomopatológico",          detail:"Recoger en Ventanilla 4, Laboratorio. Plazo: 5 días hábiles tras biopsia.",               date:"Estimado 25 jun 2024",         state:"future"  },
+  { num:6, color:"#2563EB", name:"Junta médica multidisciplinaria",      detail:"Revisión de caso completo con equipo de oncología. Sala de juntas, Piso 3.",              date:"Estimado 2 jul 2024",          state:"future"  },
+  { num:7, color:"#16A34A", name:"Inicio de tratamiento",                detail:"Protocolo según resultado de biopsia. Puede incluir quimio, radio o cirugía.",            date:"Por definir",                  state:"future"  },
+  { num:8, color:"#059669", name:"Alta y seguimiento",                   detail:"Control post-tratamiento cada 3 meses durante 2 años.",                                    date:"Por definir",                  state:"future"  },
+];
+
+let current = 2;
+let waActivated = false;
+let waPhone = "";
+
+// ── RENDER CREDENTIAL ──────────────────────────────
+function render() {
+  const lv = LEVELS[current];
+  document.getElementById("badge-face").style.background = lv.color;
+  document.getElementById("badge-icon").className = "bx " + lv.icon;
+  document.getElementById("badge-name").textContent = lv.name;
+  document.getElementById("badge-sub").textContent = lv.sub;
+  const pill = document.getElementById("level-pill");
+  pill.style.background = lv.color;
+  document.getElementById("pill-icon").className = "bx " + lv.icon;
+  document.getElementById("pill-label").textContent = lv.name + " — " + lv.sub;
+  const msg = document.getElementById("level-msg");
+  msg.textContent = lv.msg;
+  msg.style.borderLeftColor = lv.color;
+  document.getElementById("next-text").textContent = lv.next;
+
+  // Connectors
+  const row = document.getElementById("conn-row");
+  row.innerHTML = "";
+  for(let i=0;i<LEVELS.length-1;i++){
+    const seg = document.createElement("div");
+    seg.className = "conn-seg" + (i<current?" done":"");
+    seg.style.background = i<current ? lv.color : "#e0e0e0";
+    row.appendChild(seg);
+  }
+
+  // Dots
+  const grid = document.getElementById("dots-grid");
+  grid.innerHTML = "";
+  LEVELS.forEach((l,i) => {
+    const btn = document.createElement("button");
+    btn.className = "dot-btn";
+    btn.onclick = () => { current=i; render(); };
+    const state = i<current?"done":i===current?"current":"locked";
+    const circ = document.createElement("span");
+    circ.className = "dot-circle " + state;
+    circ.style.background = l.color;
+    circ.style.setProperty("--lc", l.color);
+    const ic = document.createElement("i");
+    ic.className = "bx " + l.icon;
+    circ.appendChild(ic);
+    const lbl = document.createElement("span");
+    lbl.className = "dot-lbl" + (i===current?" active-lbl":"");
+    lbl.textContent = l.name;
+    btn.append(circ,lbl);
+    grid.appendChild(btn);
+  });
+
+  // Stage note
+  const note = document.getElementById("stage-note");
+  note.textContent = current < LEVELS.length-1 ? `Etapa ${current+1} de ${LEVELS.length}` : "¡Ruta completada!";
+  const ab = document.getElementById("advance-btn");
+  ab.disabled = current >= LEVELS.length-1;
+  ab.style.opacity = ab.disabled ? ".4" : "";
+}
+
+// ── RENDER STEPS ──────────────────────────────────
+function renderSteps() {
+  const list = document.getElementById("steps-list");
+  list.innerHTML = "";
+  STEPS.forEach(s => {
+    const item = document.createElement("div");
+    item.className = "step-item";
+
+    // Number circle
+    const num = document.createElement("div");
+    num.className = "step-num";
+    num.style.background = s.state==="future"?"#e0e0e0":s.color;
+    num.textContent = s.num;
+
+    // Body
+    const body = document.createElement("div");
+    body.className = "step-body";
+    body.innerHTML = `<div class="step-name">${s.name}</div><div class="step-detail">${s.detail}</div><div class="step-date">${s.date}</div>`;
+
+    // Check
+    const chk = document.createElement("div");
+    if(s.state==="done"){
+      chk.className = "step-check done-check";
+      chk.innerHTML = "<i class='bx bx-check'></i>";
+    } else if(s.state==="today"){
+      chk.className = "step-check today-check";
+      chk.innerHTML = "<i class='bx bx-right-arrow-alt'></i>";
+    } else if(s.state==="pending"){
+      chk.className = "step-check pending-check";
+    } else {
+      chk.className = "step-check";
+    }
+
+    item.append(num,body,chk);
+    list.appendChild(item);
+  });
+}
+
+// ── TABS ──────────────────────────────────────────
+function showTab(id){
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+  document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
+  document.getElementById("tab-"+id).classList.add("active");
+  document.getElementById("panel-"+id).classList.add("active");
+}
+
+// ── ADVANCE ───────────────────────────────────────
+function advance(){
+  if(current<LEVELS.length-1){ current++; render(); openCelebration(); }
+}
+function reset(){ current=0; render(); }
+
+// ── CELEBRATION ───────────────────────────────────
+function openCelebration(){
+  const lv=LEVELS[current];
+  document.getElementById("cel-badge").style.background=lv.color;
+  document.getElementById("cel-icon").className="bx "+lv.icon;
+  document.getElementById("cel-title").textContent=lv.cel_title;
+  document.getElementById("cel-sub").textContent=lv.cel_sub;
+  document.getElementById("celebration").classList.add("show");
+}
+function closeCelebration(){ document.getElementById("celebration").classList.remove("show"); }
+function closeIfOutside(e){ if(e.target===document.getElementById("celebration")) closeCelebration(); }
+
+// ── ALERTS DISMISS ────────────────────────────────
+function dismissAlerts(){
+  document.getElementById("alert-badge").style.display="none";
+  showToast("Todas las alertas marcadas como leídas");
+}
+
+// ── REMINDER TOGGLE ───────────────────────────────
+function toggleReminder(el,name){
+  if(el.checked){
+    if(!waActivated){ el.checked=false; openWaModal(); return; }
+    showToast("Recordatorio activado: "+name);
+  } else {
+    showToast("Recordatorio desactivado: "+name);
+  }
+}
+
+// ── TOAST ─────────────────────────────────────────
+function showToast(msg){
+  const t=document.getElementById("toast");
+  document.getElementById("toast-msg").textContent=msg;
+  t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"),2800);
+}
+
+// ── WHATSAPP MODAL ────────────────────────────────
+function openWaModal(){
+  document.getElementById("wa-modal").classList.add("show");
+  document.getElementById("wa-step1").style.display="block";
+  document.getElementById("wa-step2").style.display="none";
+  document.getElementById("wa-step3").style.display="none";
+  if(waActivated){
+    // go straight to step3
+    showStep3();
+    return;
+  }
+}
+function closeWaModal(){ document.getElementById("wa-modal").classList.remove("show"); }
+function closeWaIfOutside(e){ if(e.target===document.getElementById("wa-modal")) closeWaModal(); }
+
+function sendCode(){
+  const ph = document.getElementById("phone-input").value.replace(/\s/g,"");
+  if(ph.length < 9){ showToast("Ingresa un número válido de 9 dígitos"); return; }
+  waPhone = "+51 " + ph;
+  document.getElementById("wa-phone-display").textContent = waPhone;
+  document.getElementById("wa-step1").style.display="none";
+  document.getElementById("wa-step2").style.display="block";
+  document.getElementById("code1").value="";
+  document.getElementById("code2").value="";
+  document.getElementById("code3").value="";
+  document.getElementById("code4").value="";
+  setTimeout(()=>document.getElementById("code1").focus(),100);
+}
+
+function goStep1(){
+  document.getElementById("wa-step1").style.display="block";
+  document.getElementById("wa-step2").style.display="none";
+}
+
+function focusNext(el,nextId){
+  if(el.value.length===1) document.getElementById(nextId).focus();
+}
+
+function checkCode(){
+  const code = ["code1","code2","code3","code4"].map(id=>document.getElementById(id).value).join("");
+  if(code==="1234") verifyCode();
+}
+
+function verifyCode(){
+  const code = ["code1","code2","code3","code4"].map(id=>document.getElementById(id).value).join("");
+  if(code.length<4){ showToast("Ingresa el código de 4 dígitos"); return; }
+  showStep3();
+}
+
+function showStep3(){
+  waActivated = true;
+  document.getElementById("wa-step1").style.display="none";
+  document.getElementById("wa-step2").style.display="none";
+  document.getElementById("wa-step3").style.display="block";
+  document.getElementById("wa-confirmed-number").textContent = waPhone;
+  // Update all WA UI elements
+  document.getElementById("wa-nav-label").textContent = "WhatsApp ✓";
+  document.getElementById("wa-card-status").textContent = "Activado en " + waPhone + " — recibirás alertas 24h antes";
+  document.getElementById("wa-btn-label").textContent = "Configurado ✓";
+  document.getElementById("wa-reminder-status-title").textContent = "WhatsApp activado ✓";
+  document.getElementById("wa-reminder-status-sub").textContent = "Recibirás recordatorios en " + waPhone;
+  document.getElementById("wa-reminder-btn-label").textContent = "Cambiar número";
+  document.getElementById("profile-wa-info").textContent = waPhone;
+  document.getElementById("profile-wa-info").style.color = "#16a34a";
+  document.getElementById("profile-wa-info").style.fontWeight = "600";
+  document.getElementById("profile-wa-btn-lbl").textContent = "Cambiar número";
+  document.getElementById("wa-nav-status").style.background = "#15803d";
+}
+
+// ── INIT ──────────────────────────────────────────
+render();
+renderSteps();
+
+// ══════════════════════════════════════════════════
+// SISTEMA DE TRADUCCIÓN — globo en topnav
+// ══════════════════════════════════════════════════
+const TRANSLATIONS = {
+  qu: {
+    LEVELS: [
+      { name:"Qillqay",      sub:"Ñawpaq puriy",     msg:"OncoRuta sistemapi qillqakusqanki. Casoyki kichasqa kachkan, oncología equipoman churasqa.",                                    next:"Qallariy rikuy citaman riy — Pabellón A, 1 kaq piso",                       cel_title:"¡Ñawpaq ch'aska qillqasqa!",    cel_sub:"Ñawpaq puriyta ruwarqanki. Bienvenida OncoRuta sistemapi." },
+      { name:"Estudiokuna",  sub:"Ñawi sinchi",       msg:"Imagen estudiokunayki ruwakuchkan. Mamografía programadasqa, resultados qawachkan.",                                            next:"Orden medicata Imagenologíaman apay — Pabellón C, 2 kaq piso",              cel_title:"¡Ñawi sinchi qillqasqa!",       cel_sub:"Estudiokunaykita tukurqanki. Sapan examen aswan qayllachisunki." },
+      { name:"Diagnóstico",  sub:"Informe makipi",    msg:"Diagnósticoyki takyachisqa. Equipo llapan informeta hap'in.",                                                                   next:"Informe nisqata apay — Ventanilla 4, Laboratorio",                           cel_title:"¡Informe makipi!",               cel_sub:"Cheqan yachay atipaypismi." },
+      { name:"Plan médico",  sub:"Wasi takyasqa",     msg:"Tratamiento planniyki junta médicapi takyachisqa. Imataq qatin yachaq kanki.",                                                  next:"Junta tukusqa — Tratamiento inicio Dra. Medinanwan coordinar",               cel_title:"¡Wasi takyasqa qillqasqa!",     cel_sub:"Planniykis kachkan. Allin makikunapi kachkanki." },
+      { name:"Tratamiento",  sub:"Guerrera q'umir",   msg:"Tratamientoyki purichkan. Sapan sesión aswan qayllachisunki. INENpa equipon sapan puripi kikinwan.",                            next:"Qatiq sesión: 18 jun 2024 — Pabellón de Oncología, 8:00 am",                cel_title:"¡Guerrera q'umir qillqasqa!",   cel_sub:"Tratamientoyki qallarichisqa. Sapan punchay atipay." },
+      { name:"Alta",         sub:"Quri corona",       msg:"¡Ñan tukusqa! Procesoniyki tukusqa. INEN qatiyniypi qatinsunki.",                                                               next:"Tratamiento qhipa controlta 30 p'unchaw ukhupi agenday",                     cel_title:"¡Quri corona — Ñan tukusqa!",   cel_sub:"Atipanki, María. Kay corona wiñaypim kikiykipa." },
+    ],
+    STEPS: [
+      { name:"Qillqay, sistemapi yaykuy",          detail:"Historia clínica kichasqa, oncología equipoman churasqa.",                                date:"3 jun 2024 tukusqa" },
+      { name:"Mamografía iskay maman",             detail:"Imagen estudion iskay mamapi. Resultado: sospechoso hallazgowan sup. izq. cuadrante.",    date:"10 jun 2024 tukusqa" },
+      { name:"Yawar tahuantin analizis",           detail:"Biopsia ñawpaqin hematológico perfil. Laboratorio, Piso 1-pi chayachiy.",                date:"Suyarasqa — 15 jun vence" },
+      { name:"Núcleo biopsia",                     detail:"Pabellón C, Piso 2. 6 hora ñawpaqin ama mikuy. DNI orden medicantin apamuy.",            date:"18 jun 2024 · 9:00 am" },
+      { name:"Resultado anatomopatológico",        detail:"Ventanilla 4, Laboratorio, apamuy. Plazo: biopsia qhipan 5 hábil punchaw.",              date:"Estimado 25 jun 2024" },
+      { name:"Junta médica multidisciplinaria",    detail:"Oncología equipowan caso reviewkuna. Sala de juntas, Piso 3.",                            date:"Estimado 2 jul 2024" },
+      { name:"Tratamiento qallariy",               detail:"Biopsia resultado hina protocolo. Quimio, radio mana ari cirugía.",                       date:"Por definir" },
+      { name:"Alta, qatiy",                        detail:"Tratamiento qhipa control 3 killa sapanmanta 2 wata.",                                    date:"Por definir" },
+    ],
+  },
+  ay: {
+    LEVELS: [
+      { name:"Qillqantaña",  sub:"Nayrïr sarawi",    msg:"OncoRuta sistemanxa qillqantatawa. Casomaxa jist'aratawa, oncología tamaniraki uñjatäni.",                                      next:"Qallta uñjawi citamar saraña — Pabellón A, 1ri piso",                        cel_title:"¡Nayrïr ch'ama qillqantata!",   cel_sub:"Nayrïr sarawimaxa qallti. Bienvenida OncoRuta sistemana." },
+      { name:"Yatxatawinaka",sub:"Nayra ch'ama",      msg:"Imagen yatxatawinakamaxa luraskiwa. Mamografía wakichatawa, tamaxa resultadonaka uñakipaski.",                                   next:"Orden médica Imagenologíaru apaña — Pabellón C, 2ri piso",                   cel_title:"¡Nayra ch'ama qillqantata!",    cel_sub:"Yatxatawinakamaxa tukuyata. Sapa yatxatawi jutiri saranakatakiraki." },
+      { name:"Diagnóstico",  sub:"Informe amparamana",msg:"Diagnósticomaxa chiqanchatawa. Tamaxa phuqata informeniwa.",                                                                    next:"Informe apsuña — Ventanilla 4, Laboratorio",                                 cel_title:"¡Informe amparamana!",           cel_sub:"Chiqap yatiyawixa ch'amapiniwa." },
+      { name:"Plan médico",  sub:"Uta wakichata",     msg:"Tratamiento planamaxa junta médicampi wakichatawa. Kunas jutani uñjaspawa.",                                                    next:"Junta tukuyata — Tratamiento qalltañatak Dra. Medinampi coordinar",          cel_title:"¡Uta wakichata qillqantata!",   cel_sub:"Planamaxa utjiwa. Wali amparanakans utjäni." },
+      { name:"Tratamiento",  sub:"Imill ch'ama",      msg:"Tratamientomaxa saraskiwa. Sapa sesión askiraki uñacht'ayani. INEN tamaxa sapa saranxa katäni.",                               next:"Jutiri sesión: 18 jun 2024 — Pabellón de Oncología, 8:00 am",                cel_title:"¡Imill ch'ama qillqantata!",    cel_sub:"Tratamientomaxa qallti. Sapa uru phuqhawi." },
+      { name:"Alta",         sub:"Quri corona",       msg:"¡Thakhi tukuyata! Procesaxa tukuyatawa. INEN arkawinxa sarantaskakiniwa.",                                                      next:"Tratamiento qhipa control 30 urunakana agendar",                             cel_title:"¡Quri corona — Thakhi tukuyata!",cel_sub:"Phuqhata, María. Aka coronautaxa wiñaytaki kimirintawa." },
+    ],
+    STEPS: [
+      { name:"Qillqantaña, sistemaru yapaña",      detail:"Historia clínica jist'aratayna, oncología tamaru uñjatatayna.",                          date:"3 jun 2024 tukuyata" },
+      { name:"Mamografía paya mamanakataki",       detail:"Imagen yatxatawi paya mamanakana. Resultado: sospechoso hallazgo sup. izq. cuadrante.",  date:"10 jun 2024 tukuyata" },
+      { name:"Wila taqpach analizis",              detail:"Biopsia nayrïrna hematológico perfil. Laboratorio, Piso 1-ru apsuña.",                    date:"Mä lurawipan — 15 jun vence" },
+      { name:"Núcleo biopsia",                     detail:"Pabellón C, Piso 2. 6 uru nayrïrna anuqt'ayaña. DNI orden medicamp apaña.",              date:"18 jun 2024 · 9:00 am" },
+      { name:"Resultado anatomopatológico",        detail:"Ventanilla 4, Laboratorio, apsuña. Plazo: biopsia jutïrïna 5 hábil uru.",                date:"Estimado 25 jun 2024" },
+      { name:"Junta médica multidisciplinaria",    detail:"Oncología tamampi caso uñakipaña. Sala de juntas, Piso 3.",                              date:"Estimado 2 jul 2024" },
+      { name:"Tratamiento qalltaña",               detail:"Biopsia resultado hina protocolo. Quimio, radio ukhamaraki cirugía.",                     date:"Por definir" },
+      { name:"Alta, arkawi",                       detail:"Tratamiento qhipa control 3 phaxsïnakana 2 maranaka.",                                    date:"Por definir" },
+    ],
+  },
+  ot: {
+    LEVELS: [
+      { name:"Qillqakuy",    sub:"Ñawpaq paso",      msg:"OncoRuta sistemapi qillqakusqanki. Tu caso abierto kachkan, oncología equipoman churasqa INEN-pi.",                             next:"Ñawpaq cita evaluaciónman riy — Pabellón A, Piso 1",                        cel_title:"¡Ñawpaq estrella desbloqueada!", cel_sub:"Ñawpaq pasota rurwarqanki. Bienvenida OncoRuta-pi." },
+      { name:"Estudios",     sub:"Ñawi ch'ama",       msg:"Imagen estudiosniyki proceso-pi kachkan. Mamografía programadasqa, equipo resultados qawachkan.",                               next:"Orden médica Imagenologíaman apay — Pabellón C, Piso 2",                    cel_title:"¡Ñawi ch'ama desbloqueada!",    cel_sub:"Estudiokunaykita tukurqanki. Sapan examen ñanniyki aswan." },
+      { name:"Diagnóstico",  sub:"Informe makipi",    msg:"Diagnósticoyki confirmado kachkan. Equipo llapan informe hap'in.",                                                              next:"Informe apay — Ventanilla 4, Laboratorio",                                  cel_title:"¡Informe makipi!",               cel_sub:"Cheqan yachay valentía-pas." },
+      { name:"Plan médico",  sub:"Wasi seguro",       msg:"Tratamiento planniyki junta médicapi definido. Imataq sigue yachaq kanki.",                                                     next:"Junta completada — Tratamiento inicio Dra. Medinanwan coordinar",            cel_title:"¡Wasi seguro desbloqueada!",    cel_sub:"Planniykis kachkan. Buenas manos-pi kachkanki." },
+      { name:"Tratamiento",  sub:"Guerrera q'umir",   msg:"Tratamientoyki en marcha. Sapan sesión aswan qayllachisunki. INEN equipo sapan pasopi kikinwan.",                               next:"Qatiq sesión: 18 jun 2024 — Pabellón Oncología, 8:00 am",                   cel_title:"¡Guerrera q'umir desbloqueada!", cel_sub:"Tratamientoyki qallarichisqa. Sapan punchay victoria." },
+      { name:"Alta",         sub:"Corona esmeralda",  msg:"¡Ruta completada! Procesoniyki tukusqa. INEN seguimiento-pi qatinsunki.",                                                       next:"Control post-tratamiento 30 p'unchawpi agenday",                             cel_title:"¡Corona esmeralda — Ruta completa!", cel_sub:"Lo lograste, María. Kay corona wiñaypim kikiykipa." },
+    ],
+    STEPS: [
+      { name:"Qillqakuy, sistema-pi ingreso",      detail:"Historia clínica kichasqa, oncología equipoman churasqa.",                                date:"3 jun 2024 tukusqa" },
+      { name:"Mamografía iskay mama",              detail:"Imagen estudio iskay mamapi. Resultado: hallazgo sospechoso sup. izq.",                   date:"10 jun 2024 tukusqa" },
+      { name:"Yawar análisis completo",            detail:"Biopsia ñawpaqin hematológico perfil. Laboratorio, Piso 1-pi presentay.",                 date:"Pendiente — vence 15 jun" },
+      { name:"Núcleo biopsia",                     detail:"Pabellón C, Piso 2. 6 hora ñawpaqin ama mikuy. DNI orden medicantin apamuy.",            date:"18 jun 2024 · 9:00 am" },
+      { name:"Resultado anatomopatológico",        detail:"Ventanilla 4, Laboratorio, recoger. Plazo: 5 días hábiles tras biopsia.",                 date:"Estimado 25 jun 2024" },
+      { name:"Junta médica multidisciplinaria",    detail:"Oncología equipo-wan caso revisión. Sala de juntas, Piso 3.",                             date:"Estimado 2 jul 2024" },
+      { name:"Tratamiento qallariy",               detail:"Biopsia resultado hina protocolo. Quimio, radio o cirugía.",                              date:"Por definir" },
+      { name:"Alta, seguimiento",                  detail:"Control post-tratamiento cada 3 meses durante 2 años.",                                   date:"Por definir" },
+    ],
+  },
+};
+
+let currentLang = "es";
+
+// Guardar datos originales en español (solo una vez)
+const ES_LEVELS = LEVELS.map(l => ({...l}));
+const ES_STEPS  = STEPS.map(s => ({...s}));
+
+function applyLang(lang) {
+  if (lang === "es") {
+    // Restaurar español
+    ES_LEVELS.forEach((src, i) => { LEVELS[i].name=src.name; LEVELS[i].sub=src.sub; LEVELS[i].msg=src.msg; LEVELS[i].next=src.next; LEVELS[i].cel_title=src.cel_title; LEVELS[i].cel_sub=src.cel_sub; });
+    ES_STEPS.forEach((src, i) => { STEPS[i].name=src.name; STEPS[i].detail=src.detail; STEPS[i].date=src.date; });
+  } else {
+    const t = TRANSLATIONS[lang];
+    t.LEVELS.forEach((src, i) => { LEVELS[i].name=src.name; LEVELS[i].sub=src.sub; LEVELS[i].msg=src.msg; LEVELS[i].next=src.next; LEVELS[i].cel_title=src.cel_title; LEVELS[i].cel_sub=src.cel_sub; });
+    t.STEPS.forEach((src, i) => { STEPS[i].name=src.name; STEPS[i].detail=src.detail; STEPS[i].date=src.date; });
+  }
+  render();
+  renderSteps();
+}
+
+function setLang(lang) {
+  if (lang === currentLang) { setMenuOpen(false); return; }
+  currentLang = lang;
+  document.querySelectorAll(".lang-opt").forEach(o => o.setAttribute("aria-checked", String(o.dataset.lang === lang)));
+  setMenuOpen(false);
+  document.getElementById("lang-loading").classList.add("show");
+  // Small delay so spinner is visible
+  setTimeout(() => {
+    applyLang(lang);
+    document.getElementById("lang-loading").classList.remove("show");
+  }, 120);
+}
+
+function setMenuOpen(open) {
+  const menu = document.getElementById("lang-menu");
+  menu.hidden = !open;
+  document.getElementById("lang-toggle").setAttribute("aria-expanded", String(open));
+}
+
+document.getElementById("lang-toggle").addEventListener("click", e => {
+  e.stopPropagation();
+  const menu = document.getElementById("lang-menu");
+  setMenuOpen(menu.hidden);
+});
+
+document.querySelectorAll(".lang-opt").forEach(o => {
+  o.addEventListener("click", () => setLang(o.dataset.lang));
+});
+
+document.addEventListener("click", e => {
+  if (!document.getElementById("lang-menu").hidden && !e.target.closest(".lang-switcher")) setMenuOpen(false);
+});
+
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && !document.getElementById("lang-menu").hidden) {
+    setMenuOpen(false);
+    document.getElementById("lang-toggle").focus();
+  }
+});
+</script>
+</body>
+</html>
